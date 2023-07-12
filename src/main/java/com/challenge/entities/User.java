@@ -22,7 +22,7 @@ public class User {
     @Enumerated(EnumType.STRING)
     private UserRole role;
 
-    @Column(name = "dni", nullable = false)
+    @Column(name = "dni", nullable = false, unique = true)
     private Long dni;
 
     @Column(name = "name", nullable = false)
@@ -34,7 +34,7 @@ public class User {
     @Column(name = "lastname", nullable = false)
     private String lastname;
 
-    @Column(name = "email", nullable = false)
+    @Column(name = "email", nullable = false, unique = true)
     private String email;
 
 }
