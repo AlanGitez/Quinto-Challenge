@@ -3,6 +3,7 @@ package com.challenge.out;
 public enum ResponseCode {
     SUCCESS("Ok", 200),
     FAILURE("Fail", 400),
+    UNAUTHORIZED("Unauthorized", 401),
     NOT_FOUND("Resource not found", 404);
 
 

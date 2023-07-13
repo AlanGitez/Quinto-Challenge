@@ -5,6 +5,8 @@ import com.challenge.dto.CourseDTO;
 import com.challenge.dto.CourseRequestDTO;
 import com.challenge.entities.Course;
 import com.challenge.entities.User;
+import com.challenge.out.Response;
+import com.challenge.out.ResponseCode;
 import com.challenge.repositories.CourseRepository;
 import com.challenge.repositories.UserRepository;
 import com.challenge.services.CourseService;
@@ -32,54 +34,66 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     @Transactional
-    public CourseDTO save(Course course) {
-        CourseDTO courseDTO = null;
-
+    public Response save(Course course) {
+        Response response;
         try {
             var newCourse = courseRepository.save(course);
-            courseDTO = mapper.convertValue(newCourse, CourseDTO.class);
+            CourseDTO courseDTO = mapper.convertValue(newCourse, CourseDTO.class);
+
+            response = new Response(courseDTO, ResponseCode.SUCCESS);
 
         } catch (Exception e) {
             logger.warning("Error: " + e.getMessage());
+
+            response = new Response(ResponseCode.FAILURE, e.getMessage());
         }
 
-        return courseDTO;
+        return response;
     }
 
 
     @Override
     @Transactional
-    public CourseDTO update(CourseRequestDTO body, int courseId) {
-        CourseDTO responseCourse = null;
+    public Response update(CourseRequestDTO body, int courseId) {
+        Response response = new Response();
 
         try {
             Course course = courseRepository.findById(courseId).orElseThrow();
 
             // El cero lo consieramos como nullidad del campo durante el request.
             if (body.getProfessor() != 0) {
-                setProfessorOnUpdate(body, course);
+                setProfessorOnUpdate(body, course, response);
 
-            } else if (body.getStudents() != null) {
-                setStudentsOnUpdate(body, course);
+            }
+            if (body.getStudents() != null) {
+                setStudentsOnUpdate(body, course, response);
 
-            } else {
+            }
+            if (body.getStudents() == null && body.getProfessor() == 0) {
                 course.setName(body.getName() != null ? body.getName() : course.getName());
                 course.setSchedule(body.getSchedule() != null ? body.getSchedule() : course.getSchedule());
             }
 
             course = courseRepository.save(course);
-            responseCourse = mapper.convertValue(course, CourseDTO.class);
+            CourseDTO responseCourse = mapper.convertValue(course, CourseDTO.class);
 
+            if (response.getStatusCode() == null) {
+                response.setEntity(responseCourse);
+                response.setStatusCode(ResponseCode.SUCCESS.getStatusCode());
+                response.setMsg(ResponseCode.SUCCESS.getText());
+            }
         } catch (Exception e) {
             logger.warning("Error: " + e.getMessage());
+
+            response = new Response(ResponseCode.FAILURE, e.getMessage());
         }
 
-        return responseCourse;
+        return response;
     }
 
     @Override
-    public CourseDTO removeProfessor(int courseId) {
-        CourseDTO courseDTO = null;
+    public Response removeProfessor(int courseId) {
+        Response response;
 
         try {
             Course course = courseRepository.findById(courseId).orElseThrow();
@@ -90,80 +104,98 @@ public class CourseServiceImpl implements CourseService {
                 course = courseRepository.save(course);
             }
 
-            courseDTO = mapper.convertValue(course, CourseDTO.class);
+            CourseDTO courseDTO = mapper.convertValue(course, CourseDTO.class);
+
+            response = new Response(courseDTO, ResponseCode.SUCCESS);
         } catch (Exception e) {
             logger.warning("Error: " + e.getMessage());
+
+            response = new Response(ResponseCode.FAILURE, e.getMessage());
         }
-        return courseDTO;
+        return response;
     }
 
     @Override
     @Transactional
-    public CourseDTO delete(int id) {
+    public Response delete(int id) {
+        Response response;
 
         try {
             courseRepository.deleteById(id);
+
+            response = new Response(null, ResponseCode.SUCCESS);
         } catch (Exception e) {
             logger.warning("Error: " + e.getMessage());
+
+            response = new Response(ResponseCode.FAILURE, e.getMessage());
         }
 
-        return null;
+        return response;
     }
 
     @Override
     @Transactional
-    public CourseDTO findById(int id) {
-        CourseDTO courseDTO = null;
+    public Response findById(int id) {
+        Response response;
 
         try {
             var course = courseRepository.findById(id).orElseThrow();
-            courseDTO = mapper.convertValue(course, CourseDTO.class);
+            CourseDTO courseDTO = mapper.convertValue(course, CourseDTO.class);
+
+            response = new Response(courseDTO, ResponseCode.SUCCESS);
 
         } catch (Exception e) {
             logger.warning("Error: " + e.getMessage());
+
+            response = new Response(ResponseCode.FAILURE, e.getMessage());
         }
 
-        return courseDTO;
+        return response;
 
     }
 
     @Override
     @Transactional
-    public List<CourseDTO> getAll() {
-        List<CourseDTO> courseDTOS = null;
-
+    public Response getAll() {
+        Response response;
         try {
             var courses = courseRepository.findAll();
-            courseDTOS = mapper.convertValue(courses, new TypeReference<List<CourseDTO>>() {
+            List<CourseDTO> courseDTOS = mapper.convertValue(courses, new TypeReference<List<CourseDTO>>() {
             });
 
+            response = new Response(courseDTOS, ResponseCode.SUCCESS);
         } catch (Exception e) {
             logger.warning("Error: " + e.getMessage());
+
+            response = new Response(ResponseCode.FAILURE, e.getMessage());
         }
-        return courseDTOS;
+        return response;
     }
 
 
     // Aux
-    private void setProfessorOnUpdate(CourseRequestDTO body, Course course){
-        var professor = userRepository.findById(body.getProfessor()).orElseThrow();
+    private void setProfessorOnUpdate(CourseRequestDTO body, Course course, Response response){
+        var user = userRepository.findById(body.getProfessor()).orElseThrow();
 
-        if (professor.getRole() == UserRole.PROFESSOR) {
-            course.setProfessor(professor);
+        if (user.getRole() == UserRole.PROFESSOR) {
+            course.setProfessor(user);
         } else {
-            // Informar al controller
+            response.setStatusCode(ResponseCode.FAILURE.getStatusCode());
+            response.setMsg(ResponseCode.FAILURE.getText());
+            response.setDetailedError("El Usuario no es profesor, es: " + user.getRole());
         }
     }
 
-    private void setStudentsOnUpdate(CourseRequestDTO body, Course course){
-        List<User> students = userRepository.findAllById(body.getStudents());
+    private void setStudentsOnUpdate(CourseRequestDTO body, Course course, Response response){
+        List<User> users = userRepository.findAllById(body.getStudents());
 
-        for (User user : students) {
+        for (User user : users) {
             if (user.getRole() == UserRole.STUDENT) {
                 course.getStudents().add(user);
-
             } else {
-                // Informar al controller
+                response.setStatusCode(ResponseCode.FAILURE.getStatusCode());
+                response.setMsg(ResponseCode.FAILURE.getText());
+                response.setDetailedError("Al menos uno de los usuarios no es estudiante, es: " + user.getRole());
             }
         }
     }
