@@ -31,7 +31,7 @@ public class Course {
     @JoinColumn(name = "professor")
     private User professor;
 
-    @OneToMany
+    @ManyToMany
     @JoinTable(name = "course_student",
             joinColumns = @JoinColumn(name = "course_id"),
             inverseJoinColumns = @JoinColumn(name = "student_id"))
