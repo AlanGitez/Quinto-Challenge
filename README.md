@@ -12,7 +12,7 @@ Este ultimo se encarga de levantar la tabla users e instertar datos de prueba en
 
 
 
-   Pendientes:
+## Pendientes:
 - Implementar SpringSecurity para la Autorizacion y la Autenticacion.
 - Implementar rutas de Login y Register
 - Implementar Thymeleaf para generar las vistas.
