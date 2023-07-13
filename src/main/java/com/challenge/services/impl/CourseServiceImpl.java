@@ -5,6 +5,7 @@ import com.challenge.dto.CourseDTO;
 import com.challenge.dto.CourseRequestDTO;
 import com.challenge.entities.Course;
 import com.challenge.entities.User;
+import com.challenge.exceptions.ResourceNotFoundException;
 import com.challenge.out.Response;
 import com.challenge.out.ResponseCode;
 import com.challenge.repositories.CourseRepository;
@@ -58,7 +59,9 @@ public class CourseServiceImpl implements CourseService {
         Response response = new Response();
 
         try {
-            Course course = courseRepository.findById(courseId).orElseThrow();
+            Course course = courseRepository.findById(courseId).orElseThrow(() -> {
+                throw new ResourceNotFoundException("course", "id", String.valueOf(courseId));
+            });
 
             // El cero lo consieramos como nullidad del campo durante el request.
             if (body.getProfessor() != 0) {
@@ -96,7 +99,9 @@ public class CourseServiceImpl implements CourseService {
         Response response;
 
         try {
-            Course course = courseRepository.findById(courseId).orElseThrow();
+            Course course = courseRepository.findById(courseId).orElseThrow(() -> {
+                throw new ResourceNotFoundException("course", "id", String.valueOf(courseId));
+            });
 
             if (course.getProfessor() != null) {
                 course.setProfessor(null);
@@ -135,11 +140,13 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     @Transactional
-    public Response findById(int id) {
+    public Response findById(int courseId) {
         Response response;
 
         try {
-            var course = courseRepository.findById(id).orElseThrow();
+            var course = courseRepository.findById(courseId).orElseThrow(() -> {
+                throw new ResourceNotFoundException("course", "id", String.valueOf(courseId));
+            });
             CourseDTO courseDTO = mapper.convertValue(course, CourseDTO.class);
 
             response = new Response(courseDTO, ResponseCode.SUCCESS);
@@ -159,7 +166,11 @@ public class CourseServiceImpl implements CourseService {
     public Response getAll() {
         Response response;
         try {
-            var courses = courseRepository.findAll();
+            List<Course> courses = courseRepository.findAll();
+
+            if (courses.isEmpty()) {
+                throw new ResourceNotFoundException("Courses list is empty");
+            }
             List<CourseDTO> courseDTOS = mapper.convertValue(courses, new TypeReference<List<CourseDTO>>() {
             });
 
@@ -175,7 +186,9 @@ public class CourseServiceImpl implements CourseService {
 
     // Aux
     private void setProfessorOnUpdate(CourseRequestDTO body, Course course, Response response){
-        var user = userRepository.findById(body.getProfessor()).orElseThrow();
+        var user = userRepository.findById(body.getProfessor()).orElseThrow(() -> {
+            throw new ResourceNotFoundException("user", "id", String.valueOf(body.getProfessor()));
+        });
 
         if (user.getRole() == UserRole.PROFESSOR) {
             course.setProfessor(user);
@@ -188,6 +201,10 @@ public class CourseServiceImpl implements CourseService {
 
     private void setStudentsOnUpdate(CourseRequestDTO body, Course course, Response response){
         List<User> users = userRepository.findAllById(body.getStudents());
+
+        if (users.isEmpty()) {
+            throw new ResourceNotFoundException("the list of users with the role of students is empty with the ids received");
+        }
 
         for (User user : users) {
             if (user.getRole() == UserRole.STUDENT) {

@@ -2,6 +2,7 @@ package com.challenge.services.impl;
 
 import com.challenge.dto.UserDTO;
 import com.challenge.entities.User;
+import com.challenge.exceptions.ResourceNotFoundException;
 import com.challenge.out.Response;
 import com.challenge.out.ResponseCode;
 import com.challenge.repositories.UserRepository;
@@ -49,7 +50,10 @@ public class UserServiceImpl implements UserService {
         Response response;
 
         try {
-            User user = userRepository.findById(userId).orElseThrow();
+            User user = userRepository.findById(userId).orElseThrow(() -> {
+                throw new ResourceNotFoundException("user", "id", String.valueOf(userId));
+            });
+
             mapper.updateValue(user, body);
 
             user = userRepository.save(user);
@@ -71,7 +75,9 @@ public class UserServiceImpl implements UserService {
         Response response;
 
         try {
-            User user = userRepository.findById(userId).orElseThrow();
+            User user = userRepository.findById(userId).orElseThrow(() -> {
+                throw new ResourceNotFoundException("user", "id", String.valueOf(userId));
+            });
 
             userRepository.deleteById(userId);
 
@@ -91,7 +97,9 @@ public class UserServiceImpl implements UserService {
         Response response;
 
         try {
-            User user = userRepository.findById(userId).orElseThrow();
+            User user = userRepository.findById(userId).orElseThrow(() -> {
+                throw new ResourceNotFoundException("user", "id", String.valueOf(userId));
+            });
             UserDTO dto = mapper.convertValue(user, UserDTO.class);
 
             response = new Response(dto, ResponseCode.SUCCESS);
@@ -111,8 +119,12 @@ public class UserServiceImpl implements UserService {
 
         try {
             List<User> users = userRepository.findAll();
-            List<UserDTO> userDtoList = mapper.convertValue(users, new TypeReference<List<UserDTO>>() {
-            });
+
+            if (users.isEmpty()) {
+                throw new ResourceNotFoundException("User list is empty");
+            }
+                List<UserDTO> userDtoList = mapper.convertValue(users, new TypeReference<List<UserDTO>>() {
+                });
 
             response = new Response(userDtoList, ResponseCode.SUCCESS);
         } catch (Exception e) {
