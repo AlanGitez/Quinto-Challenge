@@ -2,6 +2,8 @@ package com.challenge.services.impl;
 
 import com.challenge.dto.UserDTO;
 import com.challenge.entities.User;
+import com.challenge.out.Response;
+import com.challenge.out.ResponseCode;
 import com.challenge.repositories.UserRepository;
 import com.challenge.services.UserService;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -25,85 +27,100 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserDTO save(User body) {
-        UserDTO dto = null;
-
+    public Response save(User body) {
+        Response response;
         try {
             User user = userRepository.save(body);
+            UserDTO dto = mapper.convertValue(user, UserDTO.class);
 
-            dto = mapper.convertValue(user, UserDTO.class);
-
+            response = new Response(dto, ResponseCode.SUCCESS);
         } catch (Exception e) {
             logger.warning("Error: " + e.getMessage());
+
+            response = new Response(ResponseCode.FAILURE, e.getMessage());
         }
 
-        return dto;
+        return response;
     }
 
     @Override
     @Transactional
-    public UserDTO update(UserDTO body, int userId) {
-        UserDTO dto = null;
+    public Response update(UserDTO body, int userId) {
+        Response response;
 
         try {
             User user = userRepository.findById(userId).orElseThrow();
-
             mapper.updateValue(user, body);
 
             user = userRepository.save(user);
-            dto = mapper.convertValue(user, UserDTO.class);
 
+            UserDTO dto = mapper.convertValue(user, UserDTO.class);
+            response = new Response(dto, ResponseCode.SUCCESS);
         } catch (Exception e) {
             logger.warning("Error: " + e.getMessage());
+
+            response = new Response(ResponseCode.FAILURE, e.getMessage());
         }
 
-        return dto;
+        return response;
     }
 
     @Override
     @Transactional
-    public UserDTO delete(int userId) {
-
-        try {
-            userRepository.deleteById(userId);
-
-        } catch (Exception e) {
-            logger.warning("Error: " + e.getMessage());
-        }
-
-        return null;
-    }
-
-    @Override
-    @Transactional
-    public UserDTO findById(int userId) {
-        UserDTO dto = null;
+    public Response delete(int userId) {
+        Response response;
 
         try {
             User user = userRepository.findById(userId).orElseThrow();
-            dto = mapper.convertValue(user, UserDTO.class);
 
+            userRepository.deleteById(userId);
+
+            response = new Response(mapper.convertValue(user, UserDTO.class), ResponseCode.SUCCESS);
         } catch (Exception e) {
             logger.warning("Error: " + e.getMessage());
+
+            response = new Response(ResponseCode.FAILURE, e.getMessage());
         }
 
-        return dto;
+        return response;
     }
 
     @Override
     @Transactional
-    public List<UserDTO> getAll() {
-        List<UserDTO> userDtoList = null;
+    public Response findById(int userId) {
+        Response response;
+
+        try {
+            User user = userRepository.findById(userId).orElseThrow();
+            UserDTO dto = mapper.convertValue(user, UserDTO.class);
+
+            response = new Response(dto, ResponseCode.SUCCESS);
+        } catch (Exception e) {
+            logger.warning("Error: " + e.getMessage());
+
+            response = new Response(ResponseCode.FAILURE, e.getMessage());
+        }
+
+        return response;
+    }
+
+    @Override
+    @Transactional
+    public Response getAll() {
+        Response response;
 
         try {
             List<User> users = userRepository.findAll();
-            userDtoList = mapper.convertValue(users, new TypeReference<List<UserDTO>>() {
+            List<UserDTO> userDtoList = mapper.convertValue(users, new TypeReference<List<UserDTO>>() {
             });
 
+            response = new Response(userDtoList, ResponseCode.SUCCESS);
         } catch (Exception e) {
             logger.warning("Error: " + e.getMessage());
+
+            response = new Response(ResponseCode.FAILURE, e.getMessage());
         }
 
-        return userDtoList;
+        return response;
     }
 }
