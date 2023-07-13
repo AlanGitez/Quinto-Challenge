@@ -1,5 +1,6 @@
 package com.challenge.dto;
 
+import com.challenge.commons.UserRole;
 import com.challenge.entities.Course;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
@@ -24,6 +25,8 @@ public class UserDTO {
     private String lastname;
 
     private String email;
+
+    private UserRole role;
 
     private List<Course> courses = new ArrayList<>();
 }

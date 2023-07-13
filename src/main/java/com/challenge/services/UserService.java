@@ -2,14 +2,15 @@ package com.challenge.services;
 
 import com.challenge.dto.UserDTO;
 import com.challenge.entities.User;
+import com.challenge.out.Response;
 
 import java.util.List;
 
 public interface UserService {
-    UserDTO save(User body);
-    UserDTO update(UserDTO body, int userId);
-    UserDTO delete(int id);
-    UserDTO findById(int userId);
-    List<UserDTO> getAll();
+    Response save(User body);
+    Response update(UserDTO body, int userId);
+    Response delete(int id);
+    Response findById(int userId);
+    Response getAll();
 
 }
