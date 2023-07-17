@@ -18,6 +18,8 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserDTO {
 
+    private int id;
+
     private Long dni;
 
     private String name;

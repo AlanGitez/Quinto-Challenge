@@ -16,7 +16,8 @@ import java.util.List;
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CourseDTO {
-
+    
+    private int id;
     private String name;
 
     private CourseSchedule schedule;
